@@ -35,7 +35,14 @@ jobs:
 
       - name: Terraform Init
         working-directory: ${{ matrix.module-path }}
-        run: terraform init -input=false -migrate-state
+        run: |
+          terraform init -input=false -migrate-state \
+            -backend-config="bucket=${{ secrets.TF_BACKEND_BUCKET }}" \
+            -backend-config="key=${{ matrix.module-path }}/terraform.tfstate" \
+            -backend-config="region=${{ secrets.AWS_REGION }}" \
+            -backend-config="dynamodb_table=terraform-lock-table" \
+            -backend-config="encrypt=true"
+
 
       - name: Ensure resources exist
         working-directory: ${{ matrix.module-path }}
