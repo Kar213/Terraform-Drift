@@ -1,11 +1,5 @@
 terraform {
-  backend "s3" {
-    bucket         = var.backend_bucket
-    key            = "network/terraform.tfstate"
-    region         = var.region
-    dynamodb_table = "terraform-lock-table"
-    encrypt        = true
-  }
+  backend "s3" {}
 }
 
 provider "aws" {
