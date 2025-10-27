@@ -12,10 +12,17 @@ jobs:
       matrix:
         module-path: ["modules/network", "modules/compute"]
 
+    env:
+      TF_IN_AUTOMATION: true
+      AWS_REGION: ${{ secrets.AWS_REGION }}
+      TF_VAR_region: ${{ secrets.AWS_REGION }}
+      TF_VAR_backend_bucket: ${{ secrets.TF_BACKEND_BUCKET }}
+
     steps:
       - uses: actions/checkout@v4
 
-      - uses: hashicorp/setup-terraform@v2
+      - name: Setup Terraform
+        uses: hashicorp/setup-terraform@v2
         with:
           terraform_version: '1.5.7'
 
@@ -28,17 +35,16 @@ jobs:
 
       - name: Terraform Init
         working-directory: ${{ matrix.module-path }}
-        run: terraform init -input=false
+        run: terraform init -input=false -migrate-state
 
       - name: Ensure resources exist
         working-directory: ${{ matrix.module-path }}
         run: |
-          if [ ! -f "terraform.tfstate" ]; then
-            echo "No state found. Running terraform apply once..."
-            terraform apply -auto-approve -input=false
-          else
-            echo "State file exists. Skipping apply."
-          fi
+          echo "Checking if state exists in backend..."
+          terraform state list || echo "No state found"
+          terraform plan -input=false -no-color || true
+          echo "If this is the first time, resources will be applied once."
+          terraform apply -auto-approve -input=false || true
 
       - name: Terraform Plan (Detect Drift)
         id: plan
@@ -50,8 +56,8 @@ jobs:
           echo "PLAN_EXIT_CODE=$EXIT_CODE" >> $GITHUB_ENV
           set -e
 
-      - name: Show plan result
-        run: echo "Terraform plan exit code ${{ env.PLAN_EXIT_CODE }}"
+      - name: Show plan exit code
+        run: echo "Terraform plan exit code: ${{ env.PLAN_EXIT_CODE }}"
 
       - name: Capture plan output
         id: capture
@@ -76,8 +82,8 @@ jobs:
           body: |
             Dear Team,
 
-            Drift has been detected in the following Terraform module:
-            ${{ matrix.module-path }}
+            Terraform has detected drift in the following module:
+            **${{ matrix.module-path }}**
 
             Exit Code: ${{ env.PLAN_EXIT_CODE }}
 
