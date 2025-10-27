@@ -1,8 +1,8 @@
 terraform {
   backend "s3" {
-    bucket         = "drift-demo"
+    bucket         = var.backend_bucket
     key            = "compute/terraform.tfstate"
-    region         = "us-east-1"
+    region         = var.region
     dynamodb_table = "terraform-lock-table"
     encrypt        = true
   }
