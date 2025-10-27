@@ -30,6 +30,10 @@ jobs:
         working-directory: ${{ matrix.module-path }}
         run: terraform init -input=false
 
+      - name: Terraform Apply (Sync State)
+        working-directory: ${{ matrix.module-path }}
+        run: terraform apply -auto-approve -input=false
+
       - name: Terraform Plan (Detect Drift)
         id: plan
         working-directory: ${{ matrix.module-path }}
