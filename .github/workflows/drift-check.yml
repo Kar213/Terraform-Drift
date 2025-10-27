@@ -41,7 +41,7 @@ jobs:
           set -e
 
       - name: Show plan result
-        run: echo "Terraform plan exit code: ${{ env.PLAN_EXIT_CODE }}"
+        run: echo "Terraform plan exit code ${{ env.PLAN_EXIT_CODE }}"
 
       - name: Capture plan output
         id: capture
