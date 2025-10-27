@@ -3,7 +3,7 @@ name: Terraform Drift Detection
 on:
   workflow_dispatch:
   schedule:
-    - cron: '0 2 * * *'
+    - cron: '0 2 * * *'  # Runs daily at 2 AM UTC
 
 jobs:
   drift-check:
@@ -41,8 +41,15 @@ jobs:
           set -e
 
       - name: Show plan result
-        run: echo "Terraform plan exit code ${{ env.PLAN_EXIT_CODE }}"
+        run: echo "Terraform plan exit code: ${{ env.PLAN_EXIT_CODE }}"
 
+      - name: Capture plan output
+        id: capture
+        working-directory: ${{ matrix.module-path }}
+        run: |
+          echo "PLAN_CONTENT<<EOF" >> $GITHUB_ENV
+          cat plan.txt >> $GITHUB_ENV
+          echo "EOF" >> $GITHUB_ENV
 
       - name: Send Email if Drift Detected
         if: always()
@@ -53,20 +60,20 @@ jobs:
           username: ${{ secrets.EMAIL_USER }}
           password: ${{ secrets.EMAIL_PASS }}
           subject: "Terraform Drift Detected in ${{ matrix.module-path }}"
+          to: ${{ secrets.ALERT_EMAIL }}
+          from: ${{ secrets.EMAIL_USER }}
+          secure: true
           body: |
             Dear Team,
 
             Drift has been detected in the following Terraform module:
             ${{ matrix.module-path }}
 
-            Please review the plan output below and take necessary action.
+            Exit Code: ${{ env.PLAN_EXIT_CODE }}
 
             ---------------------------------------------------------------------
-            $(cat ${{ matrix.module-path }}/plan.txt)
+            ${{ env.PLAN_CONTENT }}
             ---------------------------------------------------------------------
 
             Regards,
             Terraform Drift Automation
-          to: ${{ secrets.ALERT_EMAIL }}
-          from: ${{ secrets.EMAIL_USER }}
-          secure: true
