@@ -41,7 +41,8 @@ jobs:
           set -e
 
       - name: Show plan result
-        run: echo "Terraform plan exit code: $PLAN_EXIT_CODE"
+        run: echo "Terraform plan exit code ${{ env.PLAN_EXIT_CODE }}"
+
 
       - name: Send Email if Drift Detected
         if: env.PLAN_EXIT_CODE == '2'
