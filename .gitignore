@@ -1,0 +1,8 @@
+# Ignore Terraform local data
+.terraform/
+*.tfstate
+*.tfstate.backup
+crash.log
+*.zip
+*.bin
+*.plan
