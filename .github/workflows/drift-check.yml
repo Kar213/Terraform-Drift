@@ -47,12 +47,20 @@ jobs:
         working-directory: ${{ matrix.module-path }}
         run: |
           echo "Checking if state exists in backend..."
-          if terraform state list >/dev/null 2>&1; then
-            echo "State found. Skipping apply, will detect drift in next step."
+          set +e
+          terraform state list >/dev/null 2>&1
+          STATE_STATUS=$?
+          set -e
+
+           if [ $STATE_STATUS -eq 0 ]; then
+              echo "✅ State found. Skipping apply — will detect drift only."
           else
-            echo "No state found. Running initial apply..."
-            terraform apply -auto-approve -input=false
+              echo "⚠️ No state found. Running initial apply..."
+              terraform apply -auto-approve -input=false
           fi
+
+          
+           
 
       - name: Terraform Plan (Detect Drift)
         id: plan
