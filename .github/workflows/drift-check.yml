@@ -3,7 +3,7 @@ name: Terraform Drift Detection
 on:
   workflow_dispatch:
   schedule:
-    - cron: '0 2 * * *'  # Runs daily at 2 AM UTC
+    - cron: '0 2 * * *'
 
 jobs:
   drift-check:
@@ -30,9 +30,15 @@ jobs:
         working-directory: ${{ matrix.module-path }}
         run: terraform init -input=false
 
-      - name: Terraform Apply (Sync State)
+      - name: Ensure resources exist
         working-directory: ${{ matrix.module-path }}
-        run: terraform apply -auto-approve -input=false
+        run: |
+          if [ ! -f "terraform.tfstate" ]; then
+            echo "No state found. Running terraform apply once..."
+            terraform apply -auto-approve -input=false
+          else
+            echo "State file exists. Skipping apply."
+          fi
 
       - name: Terraform Plan (Detect Drift)
         id: plan
