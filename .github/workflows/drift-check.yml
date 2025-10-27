@@ -74,7 +74,7 @@ jobs:
           echo "EOF" >> $GITHUB_ENV
 
       - name: Send Email if Drift Detected
-        if: env.PLAN_EXIT_CODE == '2'
+        if: ${{ env.PLAN_EXIT_CODE == '2' }}
         uses: dawidd6/action-send-mail@v3
         with:
           server_address: smtp.gmail.com
