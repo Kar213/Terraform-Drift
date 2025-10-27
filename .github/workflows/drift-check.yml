@@ -43,7 +43,6 @@ jobs:
             -backend-config="dynamodb_table=terraform-lock-table" \
             -backend-config="encrypt=true"
 
-
       - name: Ensure resources exist
         working-directory: ${{ matrix.module-path }}
         run: |
@@ -60,11 +59,9 @@ jobs:
           set +e
           terraform plan -detailed-exitcode -no-color > plan.txt
           EXIT_CODE=$?
+          echo "Terraform plan exit code: $EXIT_CODE"
           echo "PLAN_EXIT_CODE=$EXIT_CODE" >> $GITHUB_ENV
           set -e
-
-      - name: Show plan exit code
-        run: echo "Terraform plan exit code ${{ env.PLAN_EXIT_CODE }}"
 
       - name: Capture plan output
         id: capture
