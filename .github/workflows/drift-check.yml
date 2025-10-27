@@ -52,15 +52,12 @@ jobs:
           STATE_STATUS=$?
           set -e
 
-           if [ $STATE_STATUS -eq 0 ]; then
-              echo "✅ State found. Skipping apply — will detect drift only."
+          if [ $STATE_STATUS -eq 0 ]; then
+            echo "State found. Skipping apply — will only check for drift."
           else
-              echo "⚠️ No state found. Running initial apply..."
-              terraform apply -auto-approve -input=false
+            echo "No state found. Running initial apply..."
+            terraform apply -auto-approve -input=false
           fi
-
-          
-           
 
       - name: Terraform Plan (Detect Drift)
         id: plan
@@ -82,7 +79,7 @@ jobs:
           echo "EOF" >> $GITHUB_ENV
 
       - name: Send Email if Drift Detected
-        if: ${{ env.PLAN_EXIT_CODE == '2' }}
+        if: env.PLAN_EXIT_CODE == '2'
         uses: dawidd6/action-send-mail@v3
         with:
           server_address: smtp.gmail.com
