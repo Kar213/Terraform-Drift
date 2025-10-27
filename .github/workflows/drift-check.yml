@@ -1,0 +1,71 @@
+name: Terraform Drift Detection
+
+on:
+  workflow_dispatch:      # Manual trigger
+  schedule:
+    - cron: '0 2 * * *'  # Runs daily at 2 AM UTC
+
+jobs:
+  drift-check:
+    runs-on: ubuntu-latest
+    strategy:
+      matrix:
+        module-path: ["modules/network", "modules/compute"]
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: hashicorp/setup-terraform@v2
+        with:
+          terraform_version: '1.5.7'
+
+      - name: Configure AWS credentials
+        uses: aws-actions/configure-aws-credentials@v2
+        with:
+          aws-access-key-id: ${{ secrets.AWS_ACCESS_KEY_ID }}
+          aws-secret-access-key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
+          aws-region: ${{ secrets.AWS_REGION }}
+
+      - name: Terraform Init
+        working-directory: ${{ matrix.module-path }}
+        run: terraform init -input=false
+
+      - name: Terraform Plan (Detect Drift)
+        id: plan
+        working-directory: ${{ matrix.module-path }}
+        run: |
+          set +e
+          terraform plan -detailed-exitcode -no-color > plan.txt
+          EXIT_CODE=$?
+          echo "PLAN_EXIT_CODE=$EXIT_CODE" >> $GITHUB_ENV
+          set -e
+
+      - name: Show plan result
+        run: echo "Terraform plan exit code: $PLAN_EXIT_CODE"
+
+      - name: Send Email if Drift Detected
+        if: env.PLAN_EXIT_CODE == '2'
+        uses: dawidd6/action-send-mail@v3
+        with:
+          server_address: smtp.gmail.com
+          server_port: 465
+          username: ${{ secrets.EMAIL_USER }}
+          password: ${{ secrets.EMAIL_PASS }}
+          subject: "Terraform Drift Detected in ${{ matrix.module-path }}"
+          body: |
+            Dear Team,
+
+            Drift has been detected in the following Terraform module:
+            ${{ matrix.module-path }}
+
+            Please review the plan output below and take necessary action.
+
+            ---------------------------------------------------------------------
+            $(cat ${{ matrix.module-path }}/plan.txt)
+            ---------------------------------------------------------------------
+
+            Regards,
+            Terraform Drift Automation
+          to: ${{ secrets.ALERT_EMAIL }}
+          from: ${{ secrets.EMAIL_USER }}
+          secure: true
