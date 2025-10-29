@@ -64,7 +64,7 @@ jobs:
         working-directory: ${{ matrix.module-path }}
         run: |
           set +e
-          terraform plan -refresh=false -detailed-exitcode -no-color > plan.txt
+          terraform plan -refresh-only -detailed-exitcode -no-color > plan.txt
           EXIT_CODE=$?
           echo "Terraform plan exit code: $EXIT_CODE"
           echo "PLAN_EXIT_CODE=$EXIT_CODE" >> $GITHUB_ENV
