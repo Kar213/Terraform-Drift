@@ -43,30 +43,18 @@ jobs:
             -backend-config="dynamodb_table=terraform-lock-table" \
             -backend-config="encrypt=true"
 
-      - name: Ensure resources exist
-        working-directory: ${{ matrix.module-path }}
-        run: |
-          echo "Checking if state exists in backend..."
-          set +e
-          terraform state list >/dev/null 2>&1
-          STATE_STATUS=$?
-          set -e
-
-          if [ $STATE_STATUS -eq 0 ]; then
-            echo "State found. Skipping apply — will only check for drift."
-          else
-            echo "No state found. Running initial apply..."
-            terraform apply -auto-approve -input=false
-          fi
-
-      - name: Terraform Plan (Detect Drift)
+      - name: Terraform Plan (Detect Drift or Missing State)
         id: plan
         working-directory: ${{ matrix.module-path }}
         run: |
-          terraform plan -refresh-only -detailed-exitcode -no-color > plan.txt
+          terraform plan -detailed-exitcode -no-color > plan.txt 2>&1 || true
           EXIT_CODE=$?
           echo "Terraform plan exit code: $EXIT_CODE"
           echo "PLAN_EXIT_CODE=$EXIT_CODE" >> $GITHUB_ENV
+          if [ $EXIT_CODE -ne 0 ] && [ $EXIT_CODE -ne 2 ]; then
+            echo "Plan failed. Running apply to ensure resources exist."
+            terraform apply -auto-approve -input=false
+          fi
 
       - name: Capture plan output
         id: capture
