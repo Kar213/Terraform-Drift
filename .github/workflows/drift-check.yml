@@ -48,14 +48,14 @@ jobs:
         run: |
           echo "Checking if state exists in backend..."
           set +e
-          terraform state list >/dev/null 2>&1
-          STATE_STATUS=$?
+          terraform refresh -no-color >/dev/null 2>&1
+          REFRESH_STATUS=$?
           set -e
 
-          if [ $STATE_STATUS -eq 0 ]; then
-            echo "State found. Skipping apply — will only check for drift."
+          if [ $REFRESH_STATUS -eq 0 ]; then
+            echo "State found in backend. Skipping apply — will only check for drift."
           else
-            echo "No state found. Running initial apply..."
+            echo "No state found or backend empty. Running initial apply..."
             terraform apply -auto-approve -input=false
           fi
 
